@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>CLATapult Class Tracker</title>
+  <style>
+    :root {
+      --bg: #0F172A;
+      --primary: #0A2540;
+      --coral: #FF6B35;
+      --magenta: #E1306C;
+      --blue: #00D4FF;
+      --text-body: #E2E8F0;
+      --text-heading: #F8FAFC;
+      --success: #22C55E;
+      --error: #EF4444;
+      --card: #16213A;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: linear-gradient(160deg, var(--bg) 0%, var(--primary) 100%);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-body);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-radius: 16px;
+      padding: 28px 24px;
+    }
+    h1 {
+      color: var(--text-heading);
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 4px;
+      letter-spacing: -0.01em;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #94A3B8;
+      margin: 0 0 24px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-heading);
+      margin: 18px 0 6px;
+    }
+    select, input[type="date"] {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(226, 232, 240, 0.2);
+      background: #0F172A;
+      color: var(--text-body);
+      font-size: 15px;
+      font-family: inherit;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      cursor: pointer;
+    }
+    select:disabled, input:disabled {
+      opacity: 0.4;
+    }
+    .locked-topic {
+      margin-top: 8px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: rgba(0, 212, 255, 0.08);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .locked-topic .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--magenta);
+      color: white;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .locked-topic .subtopic {
+      color: #94A3B8;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .toggle-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .toggle-btn {
+      flex: 1;
+      padding: 9px;
+      border-radius: 8px;
+      border: 1px solid rgba(226, 232, 240, 0.2);
+      background: transparent;
+      color: #94A3B8;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0;
+    }
+    .toggle-btn.active {
+      background: rgba(0, 212, 255, 0.12);
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+    button {
+      width: 100%;
+      margin-top: 24px;
+      padding: 13px;
+      border: none;
+      border-radius: 8px;
+      background: var(--coral);
+      color: white;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.15s;
+    }
+    button:hover:not(:disabled) { background: #ff7d4d; transform: scale(1.01); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .msg {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+    }
+    .msg.success { background: rgba(34, 197, 94, 0.12); border: 1px solid var(--success); color: var(--success); display: block; }
+    .msg.error { background: rgba(239, 68, 68, 0.12); border: 1px solid var(--error); color: #FCA5A5; display: block; }
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #setupWarning {
+      max-width: 480px;
+      margin: 0 auto 16px;
+      background: #7C2D12;
+      border: 1px solid var(--coral);
+      color: #FED7AA;
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div style="width:100%;">
+    <div id="setupWarning">
+      ⚠️ This page hasn't been connected to your Google Sheet backend yet.
+      Open this file and replace <code>PASTE_YOUR_SCRIPT_URL_HERE</code> near the top of the
+      &lt;script&gt; section with your Apps Script <code>/exec</code> URL.
+    </div>
+    <div class="card" style="margin: 0 auto;">
+      <h1 id="cardTitle">Log a Completed Class</h1>
+      <p class="subtitle">CLATapult Class &amp; Syllabus Tracker</p>
+
+      <div class="toggle-row">
+        <button type="button" class="toggle-btn active" id="modeClassBtn">Class</button>
+        <button type="button" class="toggle-btn" id="modeExtraBtn">Extra Class</button>
+      </div>
+
+      <form id="classForm">
+        <label for="subject">Subject</label>
+        <select id="subject" required>
+          <option value="" disabled selected>Select subject…</option>
+        </select>
+
+        <label for="faculty">Faculty</label>
+        <select id="faculty" required disabled>
+          <option value="" disabled selected>Select subject first…</option>
+        </select>
+
+        <label for="batch">Batch</label>
+        <select id="batch" required disabled>
+          <option value="" disabled selected>Select faculty first…</option>
+        </select>
+
+        <label for="date">Date</label>
+        <input type="date" id="date" required disabled min="2026-01-01" />
+
+        <div id="topicSection" style="display:none;">
+          <label>Topic</label>
+          <div class="locked-topic" id="lockedTopicBox"></div>
+        </div>
+
+        <div id="gkSection" style="display:none;">
+          <label for="gkMonth">Month covered</label>
+          <select id="gkMonth"></select>
+
+          <label for="gkRevisionMonth">Also revise an old month? (optional)</label>
+          <select id="gkRevisionMonth">
+            <option value="">— none —</option>
+          </select>
+        </div>
+
+        <button type="submit" id="submitBtn" disabled>Log Class</button>
+      </form>
+
+      <form id="extraForm" style="display:none;">
+        <label for="exFaculty">Faculty</label>
+        <select id="exFaculty" required>
+          <option value="" disabled selected>Loading…</option>
+        </select>
+
+        <label for="exBatch">Batch</label>
+        <select id="exBatch" required>
+          <option value="" disabled selected>Select batch…</option>
+        </select>
+
+        <label for="exType">Type</label>
+        <select id="exType" required>
+          <option value="" disabled selected>Select type…</option>
+        </select>
+
+        <div id="exOtherNoteWrap" style="display:none;">
+          <label for="exOtherNote">Note (what was this "Other" class about?)</label>
+          <input type="text" id="exOtherNote" placeholder="Brief note…" style="width:100%;padding:11px 12px;border-radius:8px;border:1px solid rgba(226,232,240,0.2);background:#0F172A;color:var(--text-body);font-size:15px;font-family:inherit;" />
+        </div>
+
+        <label for="exDate">Date</label>
+        <input type="date" id="exDate" required min="2026-01-01" />
+
+        <button type="submit" id="exSubmitBtn">Log Extra Class</button>
+      </form>
+
+      <div class="msg" id="msgBox"></div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================================================
+    // STEP 1 OF SETUP: paste your Apps Script Web App URL between the quotes
+    // below. It looks like: https://script.google.com/macros/s/AKfycb.../exec
+    // ==========================================================================
+    const SCRIPT_URL = "PASTE_YOUR_SCRIPT_URL_HERE";
+
+    if (!SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_YOUR_SCRIPT_URL_HERE') !== -1) {
+      document.getElementById('setupWarning').style.display = 'block';
+    }
+
+    /** Calls a function on the Apps Script backend and returns a Promise
+     *  that resolves with its return value (mirrors what google.script.run
+     *  used to do, just over the network instead). */
+    function callServer(fnName, args) {
+      return fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ fn: fnName, args: args || [] }),
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (res) {
+          if (!res.ok) throw new Error(res.error || 'Server error');
+          return res.result;
+        });
+    }
+
+    let facultyCache = {};
+    let batchOptions = { real: [], bulk: [] };
+    let gkMonths = [];
+    let currentAssignment = null;
+
+    function byId(id) { return document.getElementById(id); }
+
+    function setLoading(el, text) {
+      el.innerHTML = '<span class="spinner"></span>' + text;
+    }
+
+    // ---- Init ----
+    callServer('getSubjects').then(function (subjects) {
+      const sel = byId('subject');
+      subjects.forEach(function (s) {
+        const opt = document.createElement('option');
+        opt.value = s; opt.textContent = s;
+        sel.appendChild(opt);
+      });
+    }).catch(function (err) { showMsg('error', 'Could not load subjects: ' + err.message); });
+
+    callServer('getBatchOptions').then(function (opts) {
+      batchOptions = opts;
+    }).catch(function (err) { showMsg('error', 'Could not load batches: ' + err.message); });
+
+    callServer('getGkMonths').then(function (months) {
+      gkMonths = months;
+    }).catch(function (err) { showMsg('error', 'Could not load GK months: ' + err.message); });
+
+    // ---- Subject change ----
+    byId('subject').addEventListener('change', function () {
+      const subject = this.value;
+      resetDownstream('faculty');
+      const facSel = byId('faculty');
+      facSel.disabled = true;
+      facSel.innerHTML = '<option value="" disabled selected>Loading…</option>';
+
+      callServer('getFacultyForSubject', [subject]).then(function (names) {
+        facSel.innerHTML = '<option value="" disabled selected>Select faculty…</option>';
+        names.forEach(function (n) {
+          const opt = document.createElement('option');
+          opt.value = n; opt.textContent = n;
+          facSel.appendChild(opt);
+        });
+        facSel.disabled = false;
+      }).catch(function (err) { showMsg('error', 'Could not load faculty: ' + err.message); });
+    });
+
+    // ---- Faculty change ----
+    byId('faculty').addEventListener('change', function () {
+      resetDownstream('batch');
+      const batchSel = byId('batch');
+      batchSel.innerHTML = '<option value="" disabled selected>Select batch…</option>';
+      batchOptions.real.forEach(function (b) {
+        const opt = document.createElement('option');
+        opt.value = b.code; opt.textContent = b.label;
+        batchSel.appendChild(opt);
+      });
+      const bulkGroup = document.createElement('optgroup');
+      bulkGroup.label = 'Bulk (multiple batches)';
+      batchOptions.bulk.forEach(function (b) {
+        const opt = document.createElement('option');
+        opt.value = b.code; opt.textContent = b.label;
+        bulkGroup.appendChild(opt);
+      });
+      batchSel.appendChild(bulkGroup);
+      batchSel.disabled = false;
+    });
+
+    // ---- Batch change ----
+    byId('batch').addEventListener('change', function () {
+      resetDownstream('date');
+      byId('date').disabled = false;
+    });
+
+    // ---- Date change: look up locked topic (or show GK section) ----
+    byId('date').addEventListener('change', function () {
+      const subject = byId('subject').value;
+      const dateStr = this.value;
+      if (!dateStr) return;
+
+      if (subject === 'GK') {
+        showGkSection(dateStr);
+        return;
+      }
+      showLoadingTopic();
+
+      const faculty = byId('faculty').value;
+      const batch = byId('batch').value;
+
+      callServer('getLockedAssignment', [subject, faculty, batch, dateStr]).then(function (assignment) {
+        currentAssignment = assignment;
+        renderLockedTopic(assignment);
+      }).catch(function (err) {
+        byId('lockedTopicBox').textContent = 'Error looking up schedule: ' + err.message;
+        byId('submitBtn').disabled = true;
+      });
+    });
+
+    function showLoadingTopic() {
+      byId('gkSection').style.display = 'none';
+      byId('topicSection').style.display = 'block';
+      byId('lockedTopicBox').innerHTML = '<span class="spinner"></span>Looking up this week\'s schedule…';
+      byId('submitBtn').disabled = true;
+    }
+
+    function renderLockedTopic(assignment) {
+      const box = byId('lockedTopicBox');
+      if (!assignment.found) {
+        box.innerHTML = 'No schedule assignment found for this batch/date. Ask admin to check the Weekly Schedule.';
+        byId('submitBtn').disabled = true;
+        return;
+      }
+      let html = assignment.topic;
+      if (assignment.isRevision) html += '<span class="badge">REVISION</span>';
+      if (assignment.subtopic) {
+        html += '<div class="subtopic">' + assignment.subtopic + '</div>';
+      }
+      box.innerHTML = html;
+      byId('submitBtn').disabled = false;
+    }
+
+    function showGkSection(dateStr) {
+      byId('topicSection').style.display = 'none';
+      byId('gkSection').style.display = 'block';
+      const monthSel = byId('gkMonth');
+      const revSel = byId('gkRevisionMonth');
+      monthSel.innerHTML = '';
+      revSel.innerHTML = '<option value="">— none —</option>';
+      gkMonths.forEach(function (m) {
+        const o1 = document.createElement('option');
+        o1.value = m; o1.textContent = m;
+        monthSel.appendChild(o1);
+        const o2 = document.createElement('option');
+        o2.value = m; o2.textContent = m;
+        revSel.appendChild(o2);
+      });
+      byId('submitBtn').disabled = false;
+    }
+
+    function resetDownstream(fromId) {
+      const order = ['faculty', 'batch', 'date'];
+      const idx = order.indexOf(fromId);
+      if (idx === -1) return;
+      for (let i = idx; i < order.length; i++) {
+        const el = byId(order[i]);
+        if (order[i] !== fromId) { el.disabled = true; }
+      }
+      byId('topicSection').style.display = 'none';
+      byId('gkSection').style.display = 'none';
+      byId('submitBtn').disabled = true;
+    }
+
+    // ---- Mode toggle: Class vs Extra Class ----
+    byId('modeClassBtn').addEventListener('click', function () { setMode('class'); });
+    byId('modeExtraBtn').addEventListener('click', function () { setMode('extra'); });
+
+    function setMode(mode) {
+      const isClass = mode === 'class';
+      byId('modeClassBtn').className = 'toggle-btn' + (isClass ? ' active' : '');
+      byId('modeExtraBtn').className = 'toggle-btn' + (isClass ? '' : ' active');
+      byId('classForm').style.display = isClass ? 'block' : 'none';
+      byId('extraForm').style.display = isClass ? 'none' : 'block';
+      byId('cardTitle').textContent = isClass ? 'Log a Completed Class' : 'Log an Extra Class';
+      hideMsg();
+    }
+
+    // ---- Extra Class init ----
+    callServer('getExtraClassFacultyOrder').then(function (names) {
+      const sel = byId('exFaculty');
+      sel.innerHTML = '<option value="" disabled selected>Select faculty…</option>';
+      names.forEach(function (n) {
+        const opt = document.createElement('option');
+        opt.value = n; opt.textContent = n;
+        sel.appendChild(opt);
+      });
+    }).catch(function (err) { showMsg('error', 'Could not load faculty order: ' + err.message); });
+
+    callServer('getBatchOptions').then(function (opts) {
+      const sel = byId('exBatch');
+      opts.real.forEach(function (b) {
+        const opt = document.createElement('option');
+        opt.value = b.code; opt.textContent = b.label;
+        sel.appendChild(opt);
+      });
+      const bulkGroup = document.createElement('optgroup');
+      bulkGroup.label = 'Bulk (multiple batches)';
+      opts.bulk.forEach(function (b) {
+        const opt = document.createElement('option');
+        opt.value = b.code; opt.textContent = b.label;
+        bulkGroup.appendChild(opt);
+      });
+      sel.appendChild(bulkGroup);
+    }).catch(function (err) { showMsg('error', 'Could not load batches: ' + err.message); });
+
+    callServer('getExtraClassTypes').then(function (types) {
+      const sel = byId('exType');
+      sel.innerHTML = '<option value="" disabled selected>Select type…</option>';
+      types.forEach(function (t) {
+        const opt = document.createElement('option');
+        opt.value = t; opt.textContent = t;
+        sel.appendChild(opt);
+      });
+    }).catch(function (err) { showMsg('error', 'Could not load class types: ' + err.message); });
+
+    byId('exType').addEventListener('change', function () {
+      byId('exOtherNoteWrap').style.display = this.value === 'Other' ? 'block' : 'none';
+      if (this.value === 'Doubt Clearing' || this.value === 'Mock Analysis') {
+        const batchSel = byId('exBatch');
+        for (let i = 0; i < batchSel.options.length; i++) {
+          if (batchSel.options[i].value === 'BULK:ALL') { batchSel.selectedIndex = i; break; }
+        }
+      }
+    });
+
+    byId('extraForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const payload = {
+        faculty: byId('exFaculty').value,
+        batchSelection: byId('exBatch').value,
+        type: byId('exType').value,
+        otherNote: byId('exOtherNote').value,
+        dateStr: byId('exDate').value,
+      };
+      const btn = byId('exSubmitBtn');
+      btn.disabled = true;
+      setLoading(btn, 'Logging…');
+      hideMsg();
+
+      callServer('submitExtraClass', [payload]).then(function (res) {
+        btn.disabled = false;
+        btn.textContent = 'Log Extra Class';
+        showMsg('success', 'Logged successfully.');
+        byId('extraForm').reset();
+        byId('exOtherNoteWrap').style.display = 'none';
+      }).catch(function (err) {
+        btn.disabled = false;
+        btn.textContent = 'Log Extra Class';
+        showMsg('error', 'Something went wrong: ' + err.message);
+      });
+    });
+
+    // ---- Submit (Class) ----
+    byId('classForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const subject = byId('subject').value;
+      const payload = {
+        subject: subject,
+        faculty: byId('faculty').value,
+        batchSelection: byId('batch').value,
+        dateStr: byId('date').value,
+      };
+      if (subject === 'GK') {
+        payload.gkMonth = byId('gkMonth').value;
+        payload.gkRevisionMonth = byId('gkRevisionMonth').value;
+      }
+
+      const btn = byId('submitBtn');
+      btn.disabled = true;
+      setLoading(btn, 'Logging…');
+      hideMsg();
+
+      callServer('submitClassEntry', [payload]).then(function (res) {
+        onSubmitResult(res);
+      }).catch(function (err) {
+        showMsg('error', 'Something went wrong: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Log Class';
+      });
+    });
+
+    function onSubmitResult(res) {
+      const btn = byId('submitBtn');
+      btn.textContent = 'Log Class';
+      if (res.ok) {
+        showMsg('success', 'Logged ' + res.rowsWritten + ' class' + (res.rowsWritten > 1 ? 'es' : '') + ' successfully.' +
+          (res.skipped && res.skipped.length ? ' (' + res.skipped.length + ' batch(es) skipped — see below.)' : ''));
+        if (res.skipped && res.skipped.length) {
+          const details = res.skipped.map(function (s) { return s.batch + ': ' + s.reason; }).join('<br>');
+          byId('msgBox').innerHTML += '<div style="margin-top:8px;font-size:12px;">' + details + '</div>';
+        }
+        btn.disabled = true;
+        setTimeout(function () {
+          byId('classForm').reset();
+          resetDownstream('faculty');
+          byId('faculty').disabled = true;
+        }, 1800);
+      } else {
+        showMsg('error', res.error || 'Could not log this class.');
+        if (res.clashes && res.clashes.length) {
+          const details = res.clashes.map(function (c) { return c.batch + ': ' + c.reason; }).join('<br>');
+          byId('msgBox').innerHTML += '<div style="margin-top:8px;font-size:12px;">' + details + '</div>';
+        }
+        btn.disabled = false;
+      }
+    }
+
+    function showMsg(type, text) {
+      const box = byId('msgBox');
+      box.className = 'msg ' + type;
+      box.textContent = text;
+    }
+    function hideMsg() {
+      const box = byId('msgBox');
+      box.className = 'msg';
+      box.textContent = '';
+    }
+  </script>
+</body>
+</html>
