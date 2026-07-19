@@ -382,7 +382,9 @@
       byId('submitBtn').disabled = true;
     }
 
-if (!assignment.found) {
+function renderLockedTopic(assignment) {
+  const box = byId('lockedTopicBox');
+  if (!assignment.found) {
     box.innerHTML = 'No schedule assignment found. Debug info:<br><pre style="white-space:pre-wrap;font-size:11px;">' +
       JSON.stringify(assignment.debug, null, 2) + '</pre>';
     byId('submitBtn').disabled = true;
