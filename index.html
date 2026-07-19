@@ -382,13 +382,12 @@
       byId('submitBtn').disabled = true;
     }
 
-    function renderLockedTopic(assignment) {
-      const box = byId('lockedTopicBox');
-      if (!assignment.found) {
-        box.innerHTML = 'No schedule assignment found for this batch/date. Ask admin to check the Weekly Schedule.';
-        byId('submitBtn').disabled = true;
-        return;
-      }
+if (!assignment.found) {
+    box.innerHTML = 'No schedule assignment found. Debug info:<br><pre style="white-space:pre-wrap;font-size:11px;">' +
+      JSON.stringify(assignment.debug, null, 2) + '</pre>';
+    byId('submitBtn').disabled = true;
+    return;
+  }
       let html = assignment.topic;
       if (assignment.isRevision) html += '<span class="badge">REVISION</span>';
       if (assignment.subtopic) {
